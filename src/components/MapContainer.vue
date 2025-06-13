@@ -23,8 +23,9 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
-  // SVG elements are managed by Vue's lifecycle and will be removed.
-  // No specific cleanup needed for this D3 implementation.
+  if (d3Instance && d3Instance.destroy) {
+    d3Instance.destroy();
+  }
 });
 
 const resetView = () => {
