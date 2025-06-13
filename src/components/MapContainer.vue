@@ -1,54 +1,50 @@
 <template>
-  <div ref="containerRef" class="map-container"></div>
+  <v-chart class="chart" :option="chartOption" autoresize @click="handleChartClick" />
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, defineExpose } from 'vue';
-import { initD3Scene } from '../services/d3-map';
+import { ref, onMounted } from 'vue';
+import { use } from 'echarts/core';
+import { CanvasRenderer } from 'echarts/renderers';
+import { MapChart, ScatterChart } from 'echarts/charts';
+import { TitleComponent, TooltipComponent, GeoComponent } from 'echarts/components';
+import VChart from 'vue-echarts';
+import { getMapOptions } from '../services/echarts-map';
 
-const containerRef = ref(null);
-let d3Instance = null;
+// 按需注册 ECharts 组件
+use([
+  CanvasRenderer,
+  MapChart,
+  ScatterChart,
+  TitleComponent,
+  TooltipComponent,
+  GeoComponent,
+]);
 
+const chartOption = ref({});
 const emit = defineEmits(['band-selected', 'progress', 'loaded']);
 
-onMounted(() => {
-  if (containerRef.value) {
-    d3Instance = initD3Scene(
-      containerRef.value, 
-      (band) => emit('band-selected', band),
-      (progress) => emit('progress', progress),
-      () => emit('loaded')
-    );
-  }
-});
-
-onUnmounted(() => {
-  if (d3Instance && d3Instance.destroy) {
-    d3Instance.destroy();
-  }
-});
-
-const resetView = () => {
-  if (d3Instance) {
-    d3Instance.resetView();
-  }
+// 处理图表点击事件
+const handleChartClick = (params) => {
+    // 确保点击的是乐队散点
+    if (params.seriesType === 'scatter' && params.data && params.data.originalData) {
+        emit('band-selected', params.data.originalData);
+    }
 };
 
-defineExpose({
-  resetView
+// 组件挂载后，异步获取地图配置并渲染
+onMounted(async () => {
+    emit('progress', 0);
+    chartOption.value = await getMapOptions();
+    emit('progress', 100);
+    setTimeout(() => emit('loaded'), 300); // 延迟一小段时间以获得更好的视觉效果
 });
+
 </script>
 
 <style scoped>
-.map-container {
-  width: 100%;
+.chart {
   height: 100%;
-  display: block;
+  width: 100%;
 }
-
-/* Style for D3 generated SVG elements */
-:deep(.province) {
-  cursor: pointer;
-  transition: fill 0.2s ease-in-out;
-}
-</style> 
+</style>
