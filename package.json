@@ -1,0 +1,31 @@
+{
+  "name": "china-music-map",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "next": "14.x",
+    "react": "18.x",
+    "react-dom": "18.x",
+    "typescript": "5.x",
+    "tailwindcss": "3.x",
+    "echarts": "5.x",
+    "echarts-for-react": "3.x",
+    "zustand": "4.x",
+    "framer-motion": "10.x"
+  },
+  "devDependencies": {
+    "@types/node": "20.x",
+    "@types/react": "18.x",
+    "@types/react-dom": "18.x",
+    "postcss": "^8",
+    "autoprefixer": "^10.0.1",
+    "eslint": "^8",
+    "eslint-config-next": "14.x"
+  }
+}
