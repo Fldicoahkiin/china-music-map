@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface Ripple {
@@ -13,8 +13,15 @@ interface Ripple {
 
 export default function AudioRippleEffect() {
   const [ripples, setRipples] = useState<Ripple[]>([]);
+  const [isMounted, setIsMounted] = useState(false);
 
-  useState(() => {
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isMounted) return;
+
     const handleClick = (e: MouseEvent) => {
       const ripple: Ripple = {
         id: Date.now(),
@@ -28,9 +35,11 @@ export default function AudioRippleEffect() {
 
     window.addEventListener('click', handleClick);
     return () => window.removeEventListener('click', handleClick);
-  });
+  }, [isMounted]);
 
-  useState(() => {
+  useEffect(() => {
+    if (!isMounted) return;
+
     const updateRipples = () => {
       setRipples((prev) =>
         prev
@@ -45,7 +54,9 @@ export default function AudioRippleEffect() {
 
     const interval = setInterval(updateRipples, 16);
     return () => clearInterval(interval);
-  });
+  }, [isMounted]);
+
+  if (!isMounted) return null;
 
   return (
     <AnimatePresence>
