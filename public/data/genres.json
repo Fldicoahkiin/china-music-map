@@ -1,6 +1,39 @@
 {
   "genres": [
-    "shoegaze",
-    "post-rock"
+    {
+      "id": "shoegaze",
+      "name": "盯鞋",
+      "nameEn": "Shoegaze",
+      "color": "#667eea",
+      "description": "盯鞋摇滚（Shoegaze）是一种以大量使用效果器、失真吉他和梦幻般音墙为特征的独立摇滚风格。"
+    },
+    {
+      "id": "post-rock",
+      "name": "后摇",
+      "nameEn": "Post-Rock",
+      "color": "#f093fb",
+      "description": "后摇滚（Post-Rock）是一种实验性的摇滚音乐风格，强调氛围、织体和音色，而非传统的摇滚歌曲结构。"
+    },
+    {
+      "id": "math-rock",
+      "name": "数学摇滚",
+      "nameEn": "Math Rock",
+      "color": "#4facfe",
+      "description": "数学摇滚（Math Rock）以复杂的节奏、不规则的拍子和技术性的演奏为特征。"
+    },
+    {
+      "id": "experimental",
+      "name": "实验",
+      "nameEn": "Experimental",
+      "color": "#43e97b",
+      "description": "实验音乐探索传统音乐边界之外的声音和结构。"
+    },
+    {
+      "id": "noise",
+      "name": "噪音",
+      "nameEn": "Noise",
+      "color": "#fa709a",
+      "description": "噪音音乐使用失真、反馈和非常规声音作为音乐表达的主要元素。"
+    }
   ]
-} 
+}

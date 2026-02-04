@@ -1,184 +1,252 @@
 [
-    {
-        "name": "悲伤的奶牛",
-        "province": "四川省",
-        "logo": "test.jpg",
-        "description": "",
-        "links": {}
-    },
-    {
-        "name": "Sound and Fury",
-        "province": "四川省",
-        "logo": "",
-        "description": "",
-        "links": {}
-    },
-    {
-        "name": "Deep Water 水太深",
-        "province": "四川省",
-        "logo": "",
-        "description": "",
-        "links": {}
-    },
-    {
-        "name": "最后来的是乌鸦",
-        "province": "四川省",
-        "logo": "",
-        "description": "",
-        "links": {}
-    },
-    {
-        "name": "散瞳散",
-        "province": "四川省",
-        "logo": "",
-        "description": "",
-        "links": {}
-    },
-    {
-        "name": "器质性洄游",
-        "province": "四川省",
-        "logo": "",
-        "description": "",
-        "links": {}
-    },
-    {
-        "name": "craZygrasses疯草",
-        "province": "四川省",
-        "logo": "",
-        "description": "",
-        "links": {}
-    },
-    {
-        "name": "Lonely Green",
-        "province": "重庆市",
-        "logo": "",
-        "description": "",
-        "links": {}
-    },
-    {
-        "name": "essy",
-        "province": "重庆市",
-        "logo": "",
-        "description": "",
-        "links": {}
-    },
-    {
-        "name": "Pillowine",
-        "province": "重庆市",
-        "logo": "",
-        "description": "",
-        "links": {}
-    },
-    {
-        "name": "City FIanker",
-        "province": "浙江省",
-        "logo": "",
-        "description": "",
-        "links": {}
-    },
-    {
-        "name": "杨公堤上下运动社团",
-        "province": "浙江省",
-        "logo": "",
-        "description": "",
-        "links": {}
-    },
-    {
-        "name": "Gatsby in a Daze",
-        "province": "浙江省",
-        "logo": "",
-        "description": "",
-        "links": {}
-    },
-    {
-        "name": "Self Party卧轨的火车",
-        "province": "浙江省",
-        "logo": "",
-        "description": "",
-        "links": {}
-    },
-    {
-        "name": "旧日的派珀",
-        "province": "浙江省",
-        "logo": "",
-        "description": "",
-        "links": {}
-    },
-    {
-        "name": "Tartars獭塔",
-        "province": "浙江省",
-        "logo": "",
-        "description": "",
-        "links": {}
-    },
-    {
-        "name": "Baby Formula",
-        "province": "北京市",
-        "logo": "",
-        "description": "",
-        "links": {}
-    },
-    {
-        "name": "缺省",
-        "province": "北京市",
-        "logo": "",
-        "description": "",
-        "links": {}
-    },
-    {
-        "name": "Dear Eloise",
-        "province": "北京市",
-        "logo": "",
-        "description": "",
-        "links": {}
-    },
-    {
-        "name": "二向箔FIush",
-        "province": "北京市",
-        "logo": "",
-        "description": "",
-        "links": {}
-    },
-    {
-        "name": "Darcy's dream",
-        "province": "北京市",
-        "logo": "",
-        "description": "",
-        "links": {}
-    },
-    {
-        "name": "Skip Skip Ben Ben",
-        "province": "北京市",
-        "logo": "",
-        "description": "",
-        "links": {}
-    },
-    {
-        "name": "赤身集Bare Set",
-        "province": "北京市",
-        "logo": "",
-        "description": "",
-        "links": {}
-    },
-    {
-        "name": "The Claptraps",
-        "province": "北京市",
-        "logo": "",
-        "description": "",
-        "links": {}
-    },
-    {
-        "name": "24 Personality Dogs",
-        "province": "北京市",
-        "logo": "",
-        "description": "",
-        "links": {}
-    },
-    {
-        "name": "小吵闹(the claptraps)",
-        "province": "北京市",
-        "logo": "",
-        "description": "",
-        "links": {}
-    }
+  {
+    "id": "band_sichuan_001",
+    "name": "悲伤的奶牛",
+    "genre": "盯鞋",
+    "province": "四川省",
+    "city": "成都",
+    "coordinates": [104.065, 30.659],
+    "description": "",
+    "links": {}
+  },
+  {
+    "id": "band_sichuan_002",
+    "name": "Sound and Fury",
+    "genre": "盯鞋",
+    "province": "四川省",
+    "city": "成都",
+    "coordinates": [104.065, 30.659],
+    "description": "",
+    "links": {}
+  },
+  {
+    "id": "band_sichuan_003",
+    "name": "Deep Water 水太深",
+    "genre": "盯鞋",
+    "province": "四川省",
+    "city": "成都",
+    "coordinates": [104.065, 30.659],
+    "description": "",
+    "links": {}
+  },
+  {
+    "id": "band_sichuan_004",
+    "name": "最后来的是乌鸦",
+    "genre": "盯鞋",
+    "province": "四川省",
+    "city": "成都",
+    "coordinates": [104.065, 30.659],
+    "description": "",
+    "links": {}
+  },
+  {
+    "id": "band_sichuan_005",
+    "name": "散瞳散",
+    "genre": "盯鞋",
+    "province": "四川省",
+    "city": "成都",
+    "coordinates": [104.065, 30.659],
+    "description": "",
+    "links": {}
+  },
+  {
+    "id": "band_sichuan_006",
+    "name": "器质性洄游",
+    "genre": "盯鞋",
+    "province": "四川省",
+    "city": "成都",
+    "coordinates": [104.065, 30.659],
+    "description": "",
+    "links": {}
+  },
+  {
+    "id": "band_sichuan_007",
+    "name": "craZygrasses疯草",
+    "genre": "盯鞋",
+    "province": "四川省",
+    "city": "成都",
+    "coordinates": [104.065, 30.659],
+    "description": "",
+    "links": {}
+  },
+  {
+    "id": "band_chongqing_001",
+    "name": "Lonely Green",
+    "genre": "盯鞋",
+    "province": "重庆市",
+    "city": "重庆",
+    "coordinates": [106.551, 29.563],
+    "description": "",
+    "links": {}
+  },
+  {
+    "id": "band_chongqing_002",
+    "name": "essy",
+    "genre": "盯鞋",
+    "province": "重庆市",
+    "city": "重庆",
+    "coordinates": [106.551, 29.563],
+    "description": "",
+    "links": {}
+  },
+  {
+    "id": "band_chongqing_003",
+    "name": "Pillowine",
+    "genre": "盯鞋",
+    "province": "重庆市",
+    "city": "重庆",
+    "coordinates": [106.551, 29.563],
+    "description": "",
+    "links": {}
+  },
+  {
+    "id": "band_zhejiang_001",
+    "name": "City Flanker",
+    "genre": "盯鞋",
+    "province": "浙江省",
+    "city": "杭州",
+    "coordinates": [120.153, 30.287],
+    "description": "",
+    "links": {}
+  },
+  {
+    "id": "band_zhejiang_002",
+    "name": "杨公堤上下运动社团",
+    "genre": "盯鞋",
+    "province": "浙江省",
+    "city": "杭州",
+    "coordinates": [120.153, 30.287],
+    "description": "",
+    "links": {}
+  },
+  {
+    "id": "band_zhejiang_003",
+    "name": "Gatsby in a Daze",
+    "genre": "盯鞋",
+    "province": "浙江省",
+    "city": "杭州",
+    "coordinates": [120.153, 30.287],
+    "description": "",
+    "links": {}
+  },
+  {
+    "id": "band_zhejiang_004",
+    "name": "Self Party卧轨的火车",
+    "genre": "盯鞋",
+    "province": "浙江省",
+    "city": "杭州",
+    "coordinates": [120.153, 30.287],
+    "description": "",
+    "links": {}
+  },
+  {
+    "id": "band_zhejiang_005",
+    "name": "旧日的派珀",
+    "genre": "盯鞋",
+    "province": "浙江省",
+    "city": "杭州",
+    "coordinates": [120.153, 30.287],
+    "description": "",
+    "links": {}
+  },
+  {
+    "id": "band_zhejiang_006",
+    "name": "Tartars獭塔",
+    "genre": "盯鞋",
+    "province": "浙江省",
+    "city": "杭州",
+    "coordinates": [120.153, 30.287],
+    "description": "",
+    "links": {}
+  },
+  {
+    "id": "band_beijing_001",
+    "name": "Baby Formula",
+    "genre": "盯鞋",
+    "province": "北京市",
+    "city": "北京",
+    "coordinates": [116.407, 39.904],
+    "description": "",
+    "links": {}
+  },
+  {
+    "id": "band_beijing_002",
+    "name": "缺省",
+    "genre": "盯鞋",
+    "province": "北京市",
+    "city": "北京",
+    "coordinates": [116.407, 39.904],
+    "description": "",
+    "links": {}
+  },
+  {
+    "id": "band_beijing_003",
+    "name": "Dear Eloise",
+    "genre": "盯鞋",
+    "province": "北京市",
+    "city": "北京",
+    "coordinates": [116.407, 39.904],
+    "description": "",
+    "links": {}
+  },
+  {
+    "id": "band_beijing_004",
+    "name": "二向箔Flush",
+    "genre": "盯鞋",
+    "province": "北京市",
+    "city": "北京",
+    "coordinates": [116.407, 39.904],
+    "description": "",
+    "links": {}
+  },
+  {
+    "id": "band_beijing_005",
+    "name": "Darcy's dream",
+    "genre": "盯鞋",
+    "province": "北京市",
+    "city": "北京",
+    "coordinates": [116.407, 39.904],
+    "description": "",
+    "links": {}
+  },
+  {
+    "id": "band_beijing_006",
+    "name": "Skip Skip Ben Ben",
+    "genre": "盯鞋",
+    "province": "北京市",
+    "city": "北京",
+    "coordinates": [116.407, 39.904],
+    "description": "",
+    "links": {}
+  },
+  {
+    "id": "band_beijing_007",
+    "name": "赤身集Bare Set",
+    "genre": "盯鞋",
+    "province": "北京市",
+    "city": "北京",
+    "coordinates": [116.407, 39.904],
+    "description": "",
+    "links": {}
+  },
+  {
+    "id": "band_beijing_008",
+    "name": "The Claptraps",
+    "genre": "盯鞋",
+    "province": "北京市",
+    "city": "北京",
+    "coordinates": [116.407, 39.904],
+    "description": "",
+    "links": {}
+  },
+  {
+    "id": "band_beijing_009",
+    "name": "24 Personality Dogs",
+    "genre": "盯鞋",
+    "province": "北京市",
+    "city": "北京",
+    "coordinates": [116.407, 39.904],
+    "description": "",
+    "links": {}
+  }
 ]
