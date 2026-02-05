@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import * as echarts from 'echarts';
 import ReactEChartsCore from 'echarts-for-react/lib/core';
 import { useMapStore } from '@/lib/store';
-import { GENRE_COLORS } from '@/lib/constants';
+import { GENRE_COLORS, PROVINCE_CENTERS } from '@/lib/constants';
+import { getBandsWithRadialPositions } from '@/lib/radial-layout';
 import type { EChartsOption } from 'echarts';
 
 export function ChinaMap() {
@@ -13,17 +14,24 @@ export function ChinaMap() {
   const [mapLoaded, setMapLoaded] = useState(false);
 
   const getOption = (): EChartsOption => {
-    // 计算省份中心坐标（如果选中了省份）
+    // 计算省份中心坐标和乐队辐射位置
     let geoCenter: [number, number] | undefined = undefined;
     let geoZoom = 1.2;
+    let radialBands: any[] = [];
 
     if (selectedProvince) {
       const provinceBands = bands.filter(band => band.province === selectedProvince);
+
       if (provinceBands.length > 0) {
-        const avgLng = provinceBands.reduce((sum, b) => sum + (b.coordinates?.[0] || 0), 0) / provinceBands.length;
-        const avgLat = provinceBands.reduce((sum, b) => sum + (b.coordinates?.[1] || 0), 0) / provinceBands.length;
-        geoCenter = [avgLng, avgLat];
-        geoZoom = 4;
+        // 使用省份中心坐标（如果有的话），否则使用平均坐标
+        geoCenter = PROVINCE_CENTERS[selectedProvince] || [
+          provinceBands.reduce((sum, b) => sum + (b.coordinates?.[0] || 0), 0) / provinceBands.length,
+          provinceBands.reduce((sum, b) => sum + (b.coordinates?.[1] || 0), 0) / provinceBands.length
+        ];
+        geoZoom = 5;
+
+        // 计算辐射位置
+        radialBands = getBandsWithRadialPositions(provinceBands, geoCenter);
       }
     }
 
@@ -49,100 +57,215 @@ export function ChinaMap() {
           min: 0.8,
           max: 10,
         },
+        // 未选中状态的基础样式
         itemStyle: {
-          areaColor: '#e8e8e8',
-          borderColor: '#999',
-          borderWidth: 0.5,
+          areaColor: '#e5e7eb',
+          borderColor: '#9ca3af',
+          borderWidth: 1,
+          shadowBlur: 3,
+          shadowColor: 'rgba(0, 0, 0, 0.1)',
+          shadowOffsetY: 2,
         },
+        // 选中省份时，其他省份的样式（压低、暗淡）
+        ...(selectedProvince ? {
+          regions: bands
+            .map(band => band.province)
+            .filter((p, i, arr) => arr.indexOf(p) === i) // 去重
+            .filter(p => p !== selectedProvince)
+            .map(province => ({
+              name: province,
+              itemStyle: {
+                areaColor: '#e2e8f0',
+                borderColor: '#cbd5e1',
+                opacity: 0.4,
+              },
+              emphasis: {
+                disabled: true, // 禁用hover效果
+              },
+            })),
+        } : {}),
+        // Hover效果
         emphasis: {
           itemStyle: {
-            areaColor: '#d0d0d0',
-            borderWidth: 1,
-            borderColor: '#666',
+            areaColor: '#34d399',
+            borderWidth: 2,
+            borderColor: '#fff',
+            shadowBlur: 20,
+            shadowColor: 'rgba(52, 211, 153, 0.6)',
+            shadowOffsetY: 8,
           },
           label: {
             show: true,
-            fontSize: 14,
-            color: '#333',
+            fontSize: 16,
+            color: '#1e293b',
+            fontWeight: 'bold',
+          },
+        },
+        // 选中状态
+        select: {
+          itemStyle: {
+            areaColor: '#43e97b',
+            borderWidth: 3,
+            borderColor: '#fff',
+            shadowBlur: 30,
+            shadowColor: 'rgba(67, 233, 123, 0.8)',
+            shadowOffsetY: 15,
+          },
+          label: {
+            show: true,
+            fontSize: 18,
+            color: '#fff',
+            fontWeight: 'bold',
           },
         },
       },
       animationDuration: 800,
       animationEasing: 'cubicInOut',
-    series: [
-      // 引线（只在选中省份时显示）
-      ...(selectedProvince ? [{
-        name: '引线',
-        type: 'lines',
-        coordinateSystem: 'geo',
-        data: bands
-          .filter(band => band.province === selectedProvince)
-          .map((band) => {
-            const coords = band.coordinates || [0, 0];
-            const provinceBands = bands.filter(b => b.province === selectedProvince);
-            const avgLng = provinceBands.reduce((sum, b) => sum + ((b.coordinates?.[0] || 0)), 0) / provinceBands.length;
-            const avgLat = provinceBands.reduce((sum, b) => sum + ((b.coordinates?.[1] || 0)), 0) / provinceBands.length;
-
-            return {
-              coords: [
-                [avgLng, avgLat], // 省份中心
-                coords,           // 乐队位置
+      series: [
+        // 引线（渐变虚线，只在选中省份时显示）
+        ...(selectedProvince && radialBands.length > 0 ? [{
+          name: '引线',
+          type: 'lines' as const,
+          coordinateSystem: 'geo' as const,
+          data: radialBands.map((band) => ({
+            coords: [
+              geoCenter!, // 省份中心
+              band.radialPosition, // 辐射位置
+            ],
+          })),
+          lineStyle: {
+            color: {
+              type: 'linear',
+              x: 0,
+              y: 0,
+              x2: 1,
+              y2: 0,
+              colorStops: [
+                { offset: 0, color: 'rgba(67, 233, 123, 0.8)' },
+                { offset: 1, color: 'rgba(67, 233, 123, 0.2)' }
               ],
-            };
-          }),
-        lineStyle: {
-          color: '#94a3b8',
-          width: 1,
-          type: 'dashed',
-          opacity: 0.6,
-        },
-        effect: {
-          show: false,
-        },
-        zlevel: 1,
-      }] : []),
-      // 乐队标记
-      {
-        name: '乐队',
-        type: 'scatter',
-        coordinateSystem: 'geo',
-        data: bands.map((band) => ({
-          name: band.name,
-          value: band.coordinates,
-          band: band,
-          itemStyle: {
-            color: GENRE_COLORS[band.genre] || '#94a3b8',
+            },
+            width: 2,
+            type: 'dashed',
+            curveness: 0.3,
+            opacity: 0.8,
           },
-        })),
-        symbolSize: 32,
-        symbol: (value: any, params: any) => {
-          const band = params.data.band;
-          // 如果有头像，使用头像；否则使用首字母
-          if (band.avatar) {
-            return `image://${band.avatar}`;
-          } else {
-            // 使用首字母，需要创建一个圆形背景
+          effect: {
+            show: false,
+          },
+          zlevel: 1,
+        }] : []),
+
+        // 全国视图：显示所有乐队在真实位置
+        ...(!selectedProvince ? [{
+          name: '乐队',
+          type: 'scatter' as const,
+          coordinateSystem: 'geo' as const,
+          data: bands.map((band) => ({
+            name: band.name,
+            value: band.coordinates,
+            band: band,
+            itemStyle: {
+              color: GENRE_COLORS[band.genre] || '#94a3b8',
+            },
+          })),
+          symbolSize: 28,
+          symbol: 'circle',
+          itemStyle: {
+            borderWidth: 2,
+            borderColor: '#fff',
+          },
+          label: {
+            show: false,
+          },
+          emphasis: {
+            itemStyle: {
+              borderWidth: 3,
+              shadowBlur: 15,
+              shadowColor: 'rgba(20, 184, 166, 0.5)',
+            },
+            scale: 1.4,
+          },
+          zlevel: 2,
+        }] : []),
+
+        // 省份视图：显示辐射状乐队头像
+        ...(selectedProvince && radialBands.length > 0 ? [{
+          name: '乐队',
+          type: 'scatter' as const,
+          coordinateSystem: 'geo' as const,
+          data: radialBands.map((band, index) => ({
+            name: band.name,
+            value: band.radialPosition,
+            band: band,
+            itemStyle: {
+              color: GENRE_COLORS[band.genre] || '#94a3b8',
+            },
+            animationDelay: 600 + index * 100, // 依次弹出
+          })),
+          symbolSize: 64,
+          symbol: (value: any, params: any) => {
+            const band = params.data.band;
+            if (band.avatar) {
+              return `image://${band.avatar}`;
+            }
             return 'circle';
-          }
-        },
-        itemStyle: {
-          borderWidth: 2,
-          borderColor: '#fff',
-        },
-        label: {
-          show: false,
-        },
-        emphasis: {
+          },
           itemStyle: {
             borderWidth: 3,
-            shadowBlur: 10,
-            shadowColor: 'rgba(0, 0, 0, 0.3)',
+            borderColor: '#fff',
+            shadowBlur: 8,
+            shadowColor: 'rgba(20, 184, 166, 0.3)',
           },
-          scale: 1.3,
-        },
-        zlevel: 2,
-      },
-    ],
+          label: {
+            show: false,
+          },
+          emphasis: {
+            itemStyle: {
+              borderWidth: 4,
+              shadowBlur: 20,
+              shadowColor: 'rgba(67, 233, 123, 0.6)',
+            },
+            scale: 1.3,
+            label: {
+              show: true,
+              formatter: '{b}',
+              position: 'top',
+              color: '#fff',
+              backgroundColor: 'rgba(0, 0, 0, 0.7)',
+              padding: [4, 8],
+              borderRadius: 4,
+              fontSize: 12,
+            },
+          },
+          zlevel: 3,
+        }] : []),
+
+        // 省份中心标记（选中时显示）
+        ...(selectedProvince && geoCenter ? [{
+          name: '省份中心',
+          type: 'scatter' as const,
+          coordinateSystem: 'geo' as const,
+          data: [{
+            name: selectedProvince,
+            value: geoCenter,
+          }],
+          symbolSize: 20,
+          symbol: 'circle',
+          itemStyle: {
+            color: '#43e97b',
+            borderWidth: 3,
+            borderColor: '#fff',
+            shadowBlur: 10,
+            shadowColor: 'rgba(67, 233, 123, 0.6)',
+          },
+          label: {
+            show: false,
+          },
+          zlevel: 2,
+          silent: true, // 不响应鼠标事件
+        }] : []),
+      ],
     };
   };
 
@@ -184,7 +307,7 @@ export function ChinaMap() {
   }, [bands, selectedProvince, mapLoaded]);
 
   const onChartClick = (params: any) => {
-    if (params.componentSubType === 'scatter') {
+    if (params.componentSubType === 'scatter' && params.seriesName === '乐队') {
       const band = params.data.band;
       if (band) {
         selectProvince(band.province);

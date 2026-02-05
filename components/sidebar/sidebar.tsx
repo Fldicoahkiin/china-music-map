@@ -8,7 +8,6 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { BandCard } from '@/components/band/band-card';
 import { BandDetailDialog } from '@/components/band/band-detail-dialog';
@@ -31,7 +30,7 @@ export function Sidebar() {
   return (
     <>
       <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-        <SheetContent side="left" className="w-[400px] sm:w-[540px]">
+        <SheetContent side="left" className="w-full sm:w-[400px] md:w-[480px]">
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}

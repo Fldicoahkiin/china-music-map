@@ -36,7 +36,7 @@ export default function Home() {
 
       {/* Overlay Header - Floating on Map */}
       <div className="absolute top-0 left-0 right-0 z-10 pointer-events-none">
-        <div className="flex items-center justify-between p-6">
+        <div className="flex items-center justify-between p-4 sm:p-6">
           {/* Left: Menu Button */}
           <div className="pointer-events-auto">
             <Button
@@ -51,7 +51,7 @@ export default function Home() {
 
           {/* Center: Title */}
           <div className="absolute left-1/2 -translate-x-1/2">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white whitespace-nowrap">
+            <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 dark:text-white whitespace-nowrap">
               中国独立音乐地图
             </h1>
           </div>

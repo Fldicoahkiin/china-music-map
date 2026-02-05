@@ -8,7 +8,6 @@ interface MapStore {
 
   // UI 状态
   selectedProvince: string | null;
-  selectedGenres: string[];
   searchQuery: string;
   sidebarOpen: boolean;
   selectedBand: Band | null;
@@ -21,7 +20,6 @@ interface MapStore {
   setBands: (bands: Band[]) => void;
   setGenres: (genres: Genre[]) => void;
   selectProvince: (province: string | null) => void;
-  toggleGenre: (genre: string) => void;
   setSearchQuery: (query: string) => void;
   setSidebarOpen: (open: boolean) => void;
   setSelectedBand: (band: Band | null) => void;
@@ -36,7 +34,6 @@ export const useMapStore = create<MapStore>((set, get) => ({
   bands: [],
   genres: [],
   selectedProvince: null,
-  selectedGenres: [],
   searchQuery: '',
   sidebarOpen: false,
   selectedBand: null,
@@ -59,16 +56,6 @@ export const useMapStore = create<MapStore>((set, get) => ({
     });
   },
 
-  toggleGenre: (genre) => {
-    const { selectedGenres } = get();
-    const newGenres = selectedGenres.includes(genre)
-      ? selectedGenres.filter(g => g !== genre)
-      : [...selectedGenres, genre];
-
-    set({ selectedGenres: newGenres });
-    get().filterBands();
-  },
-
   setSearchQuery: (query) => {
     set({ searchQuery: query });
     get().filterBands();
@@ -89,14 +76,9 @@ export const useMapStore = create<MapStore>((set, get) => ({
   },
 
   filterBands: () => {
-    const { bands, selectedGenres, searchQuery, selectedProvince } = get();
+    const { bands, searchQuery, selectedProvince } = get();
 
     let filtered = bands;
-
-    // 按流派筛选
-    if (selectedGenres.length > 0) {
-      filtered = filtered.filter(band => selectedGenres.includes(band.genre));
-    }
 
     // 按搜索关键词筛选
     if (searchQuery.trim()) {
