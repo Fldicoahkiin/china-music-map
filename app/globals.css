@@ -4,58 +4,73 @@
 
 @layer base {
   :root {
-    --background: 210 20% 98%;
-    --foreground: 220 20% 10%;
-    --card: 0 0% 100%;
-    --card-foreground: 220 20% 10%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 220 20% 10%;
-    --primary: 173 58% 39%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 210 20% 96%;
-    --secondary-foreground: 220 20% 10%;
-    --muted: 210 20% 96%;
-    --muted-foreground: 220 10% 50%;
-    --accent: 173 58% 39%;
-    --accent-foreground: 0 0% 100%;
-    --destructive: 0 84% 60%;
+    /* 统一动画系统 */
+    --ease: cubic-bezier(0.4, 0, 0.2, 1);
+    --ease-out: cubic-bezier(0, 0, 0.2, 1);
+    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --duration-fast: 150ms;
+    --duration: 280ms;
+    --duration-slow: 400ms;
+
+    /* 柔和配色 - 低调内敛的暖灰棕色调 */
+    --background: 40 12% 96%;
+    --foreground: 30 8% 18%;
+    --card: 40 10% 98%;
+    --card-foreground: 30 8% 18%;
+    --popover: 40 10% 98%;
+    --popover-foreground: 30 8% 18%;
+    --primary: 25 35% 38%;
+    --primary-foreground: 40 10% 98%;
+    --secondary: 40 8% 90%;
+    --secondary-foreground: 30 10% 25%;
+    --muted: 40 8% 92%;
+    --muted-foreground: 30 6% 45%;
+    --accent: 25 30% 42%;
+    --accent-foreground: 40 10% 98%;
+    --destructive: 0 55% 50%;
     --destructive-foreground: 0 0% 100%;
-    --border: 220 15% 90%;
-    --input: 220 15% 90%;
-    --ring: 173 58% 39%;
-    --radius: 0.5rem;
-    --chart-1: 173 58% 39%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 200 70% 50%;
-    --chart-4: 220 60% 55%;
-    --chart-5: 250 50% 60%;
+    --border: 40 8% 85%;
+    --input: 40 8% 88%;
+    --ring: 25 30% 42%;
+    --radius: 0.375rem;
+
+    /* 地图专用配色 - 亮色 */
+    --map-bg: 40 15% 94%;
+    --map-province: 40 10% 88%;
+    --map-province-hover: 35 15% 82%;
+    --map-province-selected: 30 20% 78%;
+    --map-border: 35 8% 75%;
+    --map-text: 30 8% 35%;
   }
 
   .dark {
-    --background: 222 20% 12%;
-    --foreground: 210 20% 95%;
-    --card: 222 20% 14%;
-    --card-foreground: 210 20% 95%;
-    --popover: 222 20% 14%;
-    --popover-foreground: 210 20% 95%;
-    --primary: 173 58% 39%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 222 15% 20%;
-    --secondary-foreground: 210 20% 95%;
-    --muted: 222 15% 20%;
-    --muted-foreground: 220 10% 60%;
-    --accent: 173 58% 39%;
-    --accent-foreground: 0 0% 100%;
-    --destructive: 0 62% 30%;
+    --background: 30 10% 10%;
+    --foreground: 40 8% 88%;
+    --card: 30 10% 12%;
+    --card-foreground: 40 8% 88%;
+    --popover: 30 10% 12%;
+    --popover-foreground: 40 8% 88%;
+    --primary: 30 35% 55%;
+    --primary-foreground: 30 10% 10%;
+    --secondary: 30 8% 18%;
+    --secondary-foreground: 40 8% 82%;
+    --muted: 30 8% 18%;
+    --muted-foreground: 40 6% 55%;
+    --accent: 30 30% 50%;
+    --accent-foreground: 30 10% 10%;
+    --destructive: 0 50% 45%;
     --destructive-foreground: 0 0% 100%;
-    --border: 222 15% 22%;
-    --input: 222 15% 22%;
-    --ring: 173 58% 39%;
-    --chart-1: 173 58% 39%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 200 70% 50%;
-    --chart-4: 220 60% 55%;
-    --chart-5: 250 50% 60%;
+    --border: 30 8% 20%;
+    --input: 30 8% 22%;
+    --ring: 30 30% 50%;
+
+    /* 地图专用配色 - 暗色 */
+    --map-bg: 30 12% 12%;
+    --map-province: 30 8% 18%;
+    --map-province-hover: 30 12% 25%;
+    --map-province-selected: 30 18% 30%;
+    --map-border: 30 6% 25%;
+    --map-text: 40 8% 70%;
   }
 }
 
@@ -63,7 +78,29 @@
   * {
     @apply border-border;
   }
+
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "kern" 1, "liga" 1;
+  }
+
+  /* 统一所有过渡 */
+  button, a, [role="button"] {
+    transition: all var(--duration) var(--ease);
+  }
+}
+
+@layer utilities {
+  /* 统一动画类 */
+  .transition-unified {
+    transition: all var(--duration) var(--ease);
+  }
+
+  .transition-fast {
+    transition: all var(--duration-fast) var(--ease);
+  }
+
+  .transition-slow {
+    transition: all var(--duration-slow) var(--ease);
   }
 }

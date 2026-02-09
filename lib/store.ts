@@ -8,6 +8,7 @@ interface MapStore {
 
   // UI 状态
   selectedProvince: string | null;
+  selectedGenre: string | null;
   searchQuery: string;
   sidebarOpen: boolean;
   selectedBand: Band | null;
@@ -15,17 +16,20 @@ interface MapStore {
   // 计算属性
   filteredBands: Band[];
   provinceBands: Band[];
+  genreFilteredBands: Band[];
 
   // Actions
   setBands: (bands: Band[]) => void;
   setGenres: (genres: Genre[]) => void;
   selectProvince: (province: string | null) => void;
+  selectGenre: (genre: string | null) => void;
   setSearchQuery: (query: string) => void;
   setSidebarOpen: (open: boolean) => void;
   setSelectedBand: (band: Band | null) => void;
 
   // 辅助方法
   getBandsByProvince: (province: string) => Band[];
+  getBandsByGenre: (genre: string) => Band[];
   filterBands: () => Band[];
 }
 
@@ -34,11 +38,13 @@ export const useMapStore = create<MapStore>((set, get) => ({
   bands: [],
   genres: [],
   selectedProvince: null,
+  selectedGenre: null,
   searchQuery: '',
   sidebarOpen: false,
   selectedBand: null,
   filteredBands: [],
   provinceBands: [],
+  genreFilteredBands: [],
 
   // Actions
   setBands: (bands) => {
@@ -49,10 +55,32 @@ export const useMapStore = create<MapStore>((set, get) => ({
   setGenres: (genres) => set({ genres }),
 
   selectProvince: (province) => {
+    const { selectedGenre, getBandsByProvince, getBandsByGenre } = get();
+    let provinceBands = province ? getBandsByProvince(province) : [];
+
+    // 如果有流派筛选，则同时应用
+    if (selectedGenre && provinceBands.length > 0) {
+      provinceBands = provinceBands.filter(b => b.genre === selectedGenre);
+    }
+
     set({
       selectedProvince: province,
       sidebarOpen: province !== null,
-      provinceBands: province ? get().getBandsByProvince(province) : []
+      selectedBand: null,
+      provinceBands
+    });
+  },
+
+  selectGenre: (genre) => {
+    const { bands } = get();
+    const genreFilteredBands = genre ? bands.filter(b => b.genre === genre) : bands;
+    set({
+      selectedGenre: genre,
+      genreFilteredBands,
+      selectedProvince: null,
+      sidebarOpen: false,
+      selectedBand: null,
+      provinceBands: []
     });
   },
 
@@ -64,7 +92,8 @@ export const useMapStore = create<MapStore>((set, get) => ({
   setSidebarOpen: (open) => {
     set({
       sidebarOpen: open,
-      selectedProvince: open ? get().selectedProvince : null
+      selectedProvince: open ? get().selectedProvince : null,
+      selectedBand: open ? get().selectedBand : null
     });
   },
 
@@ -72,13 +101,27 @@ export const useMapStore = create<MapStore>((set, get) => ({
 
   // 辅助方法
   getBandsByProvince: (province) => {
-    return get().bands.filter(band => band.province === province);
+    const { bands, selectedGenre } = get();
+    let filtered = bands.filter(band => band.province === province);
+    if (selectedGenre) {
+      filtered = filtered.filter(band => band.genre === selectedGenre);
+    }
+    return filtered;
+  },
+
+  getBandsByGenre: (genre) => {
+    return get().bands.filter(band => band.genre === genre);
   },
 
   filterBands: () => {
-    const { bands, searchQuery, selectedProvince } = get();
+    const { bands, searchQuery, selectedProvince, selectedGenre } = get();
 
     let filtered = bands;
+
+    // 按流派筛选
+    if (selectedGenre) {
+      filtered = filtered.filter(band => band.genre === selectedGenre);
+    }
 
     // 按搜索关键词筛选
     if (searchQuery.trim()) {
@@ -95,7 +138,7 @@ export const useMapStore = create<MapStore>((set, get) => ({
       filtered = filtered.filter(band => band.province === selectedProvince);
     }
 
-    set({ filteredBands: filtered });
+    set({ filteredBands: filtered, genreFilteredBands: selectedGenre ? get().getBandsByGenre(selectedGenre) : bands });
     return filtered;
   }
 }));

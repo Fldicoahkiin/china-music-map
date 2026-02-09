@@ -1,347 +1,479 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import * as echarts from 'echarts';
 import ReactEChartsCore from 'echarts-for-react/lib/core';
 import { useMapStore } from '@/lib/store';
-import { GENRE_COLORS, PROVINCE_CENTERS } from '@/lib/constants';
-import { getBandsWithRadialPositions } from '@/lib/radial-layout';
+import { PROVINCE_CENTERS } from '@/lib/constants';
+import {
+  calculateForceLayout,
+  getAvatarSizeForZoom,
+  type ForceLayoutBand,
+} from '@/lib/force-layout';
+import { createGeoPixelConverter } from '@/lib/geo-pixel-converter';
 import type { EChartsOption } from 'echarts';
+import { useTheme } from 'next-themes';
 
 export function ChinaMap() {
   const chartRef = useRef<ReactEChartsCore>(null);
-  const { bands, selectProvince, selectedProvince } = useMapStore();
+  const {
+    bands,
+    selectProvince,
+    selectedProvince,
+    setSelectedBand,
+    selectedGenre,
+    genreFilteredBands,
+  } = useMapStore();
   const [mapLoaded, setMapLoaded] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const { resolvedTheme } = useTheme();
 
-  const getOption = (): EChartsOption => {
-    // 计算省份中心坐标和乐队辐射位置
-    let geoCenter: [number, number] | undefined = undefined;
-    let geoZoom = 1.2;
-    let radialBands: any[] = [];
+  // 布局数据状态
+  const [layoutData, setLayoutData] = useState<ForceLayoutBand[]>([]);
+  const [currentZoom, setCurrentZoom] = useState(1.2);
 
-    if (selectedProvince) {
-      const provinceBands = bands.filter(band => band.province === selectedProvince);
+  // 保存当前缩放状态
+  const zoomRef = useRef(1.2);
+  const prevProvinceRef = useRef<string | null>(null);
+  const layoutTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-      if (provinceBands.length > 0) {
-        // 使用省份中心坐标（如果有的话），否则使用平均坐标
-        geoCenter = PROVINCE_CENTERS[selectedProvince] || [
-          provinceBands.reduce((sum, b) => sum + (b.coordinates?.[0] || 0), 0) / provinceBands.length,
-          provinceBands.reduce((sum, b) => sum + (b.coordinates?.[1] || 0), 0) / provinceBands.length
-        ];
-        geoZoom = 5;
+  // 防止 hydration 错误
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
-        // 计算辐射位置
-        radialBands = getBandsWithRadialPositions(provinceBands, geoCenter);
-      }
+  const isDark = mounted ? resolvedTheme === 'dark' : false;
+
+  // 根据流派过滤显示的乐队
+  const displayBands = useMemo(() => {
+    return selectedGenre ? genreFilteredBands : bands;
+  }, [bands, selectedGenre, genreFilteredBands]);
+
+  const isProvinceView = !!selectedProvince;
+
+  // 计算布局（防抖处理）
+  const recalculateLayout = useCallback(() => {
+    if (!mapLoaded || displayBands.length === 0) return;
+
+    const instance = chartRef.current?.getEchartsInstance();
+    if (!instance) return;
+
+    const converter = createGeoPixelConverter(instance);
+    if (!converter) return;
+
+    const zoom = converter.getZoom();
+    const newLayout = calculateForceLayout(displayBands, converter, { zoom });
+    setLayoutData(newLayout);
+    setCurrentZoom(zoom);
+  }, [mapLoaded, displayBands]);
+
+  // 监听地图加载完成后初始化布局
+  useEffect(() => {
+    if (mapLoaded && displayBands.length > 0) {
+      // 延迟执行，确保 ECharts 完全渲染
+      const timer = setTimeout(recalculateLayout, 100);
+      return () => clearTimeout(timer);
     }
+  }, [mapLoaded, displayBands, recalculateLayout]);
+
+  // 计算地图中心
+  const mapCenter = useMemo((): [number, number] | undefined => {
+    if (!selectedProvince) return undefined;
+    const center = PROVINCE_CENTERS[selectedProvince];
+    if (!center) return undefined;
+    return [center[0] + 5, center[1]];
+  }, [selectedProvince]);
+
+  // 获取所有有乐队的省份
+  const provincesWithBands = useMemo(() => {
+    return [...new Set(displayBands.map((b) => b.province))];
+  }, [displayBands]);
+
+  const avatarBorderColor = isDark ? '#6b6560' : '#a09080';
+
+  const colors = useMemo(
+    () => ({
+      mapBg: isDark ? '#1a1816' : '#f5f2ef',
+      province: isDark ? '#2a2623' : '#e8e4df',
+      provinceHover: isDark ? '#3a3633' : '#ddd8d2',
+      provinceSelected: isDark ? '#4a4540' : '#d5cfc8',
+      border: isDark ? '#3a3633' : '#ccc7c0',
+      borderLight: isDark ? '#4a4643' : '#d8d4cd',
+      text: isDark ? '#a09890' : '#5a5550',
+      avatarBg: isDark ? '#3a3633' : '#4a4540',
+      lineColor: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)',
+    }),
+    [isDark]
+  );
+
+  // 动态头像大小
+  const avatarSize = useMemo(() => {
+    const baseSize = getAvatarSizeForZoom(currentZoom);
+    return isProvinceView ? baseSize * 1.1 : baseSize;
+  }, [currentZoom, isProvinceView]);
+
+  // 生成连接线数据（从省中心到乐队）
+  const connectionLines = useMemo(() => {
+    if (!selectedProvince) return [];
+
+    const provinceBands = layoutData.filter(
+      (b) => b.province === selectedProvince
+    );
+    const center = PROVINCE_CENTERS[selectedProvince];
+
+    if (!center) return [];
+
+    return provinceBands.map((band) => ({
+      coords: [center, band.layoutPosition],
+      band: band,
+    }));
+  }, [layoutData, selectedProvince]);
+
+  const chartOption = useMemo((): EChartsOption => {
+    // 只在省份切换时重置缩放
+    const provinceChanged = selectedProvince !== prevProvinceRef.current;
+    if (provinceChanged) {
+      prevProvinceRef.current = selectedProvince;
+      zoomRef.current = isProvinceView ? 5 : 1.2;
+    }
+
+    const provinceRegions = provincesWithBands.map((province) => ({
+      name: province,
+      itemStyle: {
+        areaColor:
+          isProvinceView && province !== selectedProvince
+            ? isDark
+              ? '#1f1d1a'
+              : '#f0ece8'
+            : colors.province,
+        borderColor:
+          isProvinceView && province !== selectedProvince
+            ? colors.borderLight
+            : colors.border,
+      },
+      emphasis:
+        isProvinceView && province !== selectedProvince
+          ? { disabled: true }
+          : undefined,
+    }));
 
     return {
       backgroundColor: 'transparent',
-      tooltip: {
-        trigger: 'item',
-        formatter: (params: any) => {
-          if (params.componentSubType === 'scatter') {
-            const band = params.data.band;
-            return `${band.name}<br/>${band.genre} · ${band.city}`;
-          } else {
-            return params.name;
-          }
-        },
-      },
+      tooltip: { show: false },
       geo: {
         map: 'china',
         roam: true,
-        center: geoCenter,
-        zoom: geoZoom,
-        scaleLimit: {
-          min: 0.8,
-          max: 10,
-        },
-        // 未选中状态的基础样式
+        center: mapCenter,
+        zoom: zoomRef.current,
+        scaleLimit: { min: 0.8, max: 12 },
         itemStyle: {
-          areaColor: '#e5e7eb',
-          borderColor: '#9ca3af',
-          borderWidth: 1,
-          shadowBlur: 3,
-          shadowColor: 'rgba(0, 0, 0, 0.1)',
-          shadowOffsetY: 2,
+          areaColor: colors.province,
+          borderColor: colors.border,
+          borderWidth: 0.8,
         },
-        // 选中省份时，其他省份的样式（压低、暗淡）
-        ...(selectedProvince ? {
-          regions: bands
-            .map(band => band.province)
-            .filter((p, i, arr) => arr.indexOf(p) === i) // 去重
-            .filter(p => p !== selectedProvince)
-            .map(province => ({
-              name: province,
-              itemStyle: {
-                areaColor: '#e2e8f0',
-                borderColor: '#cbd5e1',
-                opacity: 0.4,
-              },
-              emphasis: {
-                disabled: true, // 禁用hover效果
-              },
-            })),
-        } : {}),
-        // Hover效果
+        regions: provinceRegions,
         emphasis: {
           itemStyle: {
-            areaColor: '#34d399',
-            borderWidth: 2,
-            borderColor: '#fff',
-            shadowBlur: 20,
-            shadowColor: 'rgba(52, 211, 153, 0.6)',
-            shadowOffsetY: 8,
+            areaColor: colors.provinceHover,
+            borderColor: colors.border,
+            borderWidth: 1.2,
           },
           label: {
             show: true,
-            fontSize: 16,
-            color: '#1e293b',
-            fontWeight: 'bold',
+            fontSize: 12,
+            color: colors.text,
+            fontWeight: 500,
           },
         },
-        // 选中状态
         select: {
           itemStyle: {
-            areaColor: '#43e97b',
-            borderWidth: 3,
-            borderColor: '#fff',
-            shadowBlur: 30,
-            shadowColor: 'rgba(67, 233, 123, 0.8)',
-            shadowOffsetY: 15,
+            areaColor: colors.provinceSelected,
+            borderColor: isDark ? '#5a5550' : '#b5b0a8',
+            borderWidth: 1.5,
           },
           label: {
             show: true,
-            fontSize: 18,
-            color: '#fff',
-            fontWeight: 'bold',
+            fontSize: 13,
+            color: colors.text,
+            fontWeight: 600,
           },
         },
       },
-      animationDuration: 800,
-      animationEasing: 'cubicInOut',
+      animation: false,
       series: [
-        // 引线（渐变虚线，只在选中省份时显示）
-        ...(selectedProvince && radialBands.length > 0 ? [{
-          name: '引线',
-          type: 'lines' as const,
-          coordinateSystem: 'geo' as const,
-          data: radialBands.map((band) => ({
-            coords: [
-              geoCenter!, // 省份中心
-              band.radialPosition, // 辐射位置
-            ],
-          })),
-          lineStyle: {
-            color: {
-              type: 'linear',
-              x: 0,
-              y: 0,
-              x2: 1,
-              y2: 0,
-              colorStops: [
-                { offset: 0, color: 'rgba(67, 233, 123, 0.8)' },
-                { offset: 1, color: 'rgba(67, 233, 123, 0.2)' }
-              ],
-            },
-            width: 2,
-            type: 'dashed',
-            curveness: 0.3,
-            opacity: 0.8,
-          },
-          effect: {
-            show: false,
-          },
-          zlevel: 1,
-        }] : []),
-
-        // 全国视图：显示所有乐队在真实位置
-        ...(!selectedProvince ? [{
-          name: '乐队',
-          type: 'scatter' as const,
-          coordinateSystem: 'geo' as const,
-          data: bands.map((band) => ({
+        // 连接线 - 从省中心到乐队
+        ...(isProvinceView && connectionLines.length > 0
+          ? [
+              {
+                name: 'connections',
+                type: 'lines' as const,
+                coordinateSystem: 'geo' as const,
+                zlevel: 1,
+                effect: {
+                  show: false,
+                },
+                lineStyle: {
+                  color: colors.lineColor,
+                  width: 1,
+                  type: 'dashed' as const,
+                  opacity: 0.6,
+                },
+                data: connectionLines.map((line) => ({
+                  coords: line.coords,
+                })),
+              },
+            ]
+          : []),
+        // 乐队头像
+        {
+          name: 'bands',
+          type: 'scatter',
+          coordinateSystem: 'geo',
+          data: layoutData.map((band) => ({
             name: band.name,
-            value: band.coordinates,
+            value: band.layoutPosition,
             band: band,
-            itemStyle: {
-              color: GENRE_COLORS[band.genre] || '#94a3b8',
-            },
           })),
-          symbolSize: 28,
-          symbol: 'circle',
-          itemStyle: {
-            borderWidth: 2,
-            borderColor: '#fff',
-          },
-          label: {
-            show: false,
-          },
-          emphasis: {
-            itemStyle: {
-              borderWidth: 3,
-              shadowBlur: 15,
-              shadowColor: 'rgba(20, 184, 166, 0.5)',
-            },
-            scale: 1.4,
-          },
-          zlevel: 2,
-        }] : []),
-
-        // 省份视图：显示辐射状乐队头像
-        ...(selectedProvince && radialBands.length > 0 ? [{
-          name: '乐队',
-          type: 'scatter' as const,
-          coordinateSystem: 'geo' as const,
-          data: radialBands.map((band, index) => ({
-            name: band.name,
-            value: band.radialPosition,
-            band: band,
-            itemStyle: {
-              color: GENRE_COLORS[band.genre] || '#94a3b8',
-            },
-            animationDelay: 600 + index * 100, // 依次弹出
-          })),
-          symbolSize: 64,
-          symbol: (value: any, params: any) => {
-            const band = params.data.band;
-            if (band.avatar) {
-              return `image://${band.avatar}`;
-            }
-            return 'circle';
+          symbolSize: avatarSize,
+          symbol: (_value: unknown, params: unknown) => {
+            const p = params as { data?: { band?: ForceLayoutBand } };
+            const band = p.data?.band;
+            return band?.avatar ? `image://${band.avatar}` : 'circle';
           },
           itemStyle: {
-            borderWidth: 3,
-            borderColor: '#fff',
-            shadowBlur: 8,
-            shadowColor: 'rgba(20, 184, 166, 0.3)',
+            color: colors.avatarBg,
+            borderWidth: isProvinceView ? 3 : 2,
+            borderColor: avatarBorderColor,
+            shadowColor: 'rgba(0,0,0,0.15)',
+            shadowBlur: isProvinceView ? 8 : 4,
+            shadowOffsetY: isProvinceView ? 4 : 2,
           },
           label: {
-            show: false,
+            show: true,
+            formatter: (params: unknown) => {
+              const p = params as { data?: { band?: ForceLayoutBand } };
+              const band = p.data?.band;
+              return band?.avatar ? '' : band?.name?.[0] || '';
+            },
+            fontSize: avatarSize * 0.4,
+            fontWeight: 600,
+            color: '#fff',
           },
           emphasis: {
+            scale: 1.15,
             itemStyle: {
-              borderWidth: 4,
-              shadowBlur: 20,
-              shadowColor: 'rgba(67, 233, 123, 0.6)',
-            },
-            scale: 1.3,
-            label: {
-              show: true,
-              formatter: '{b}',
-              position: 'top',
-              color: '#fff',
-              backgroundColor: 'rgba(0, 0, 0, 0.7)',
-              padding: [4, 8],
-              borderRadius: 4,
-              fontSize: 12,
+              borderWidth: isProvinceView ? 4 : 3,
+              shadowBlur: 12,
+              shadowColor: 'rgba(0,0,0,0.2)',
             },
           },
           zlevel: 3,
-        }] : []),
-
-        // 省份中心标记（选中时显示）
-        ...(selectedProvince && geoCenter ? [{
-          name: '省份中心',
-          type: 'scatter' as const,
-          coordinateSystem: 'geo' as const,
-          data: [{
-            name: selectedProvince,
-            value: geoCenter,
-          }],
-          symbolSize: 20,
-          symbol: 'circle',
-          itemStyle: {
-            color: '#43e97b',
-            borderWidth: 3,
-            borderColor: '#fff',
-            shadowBlur: 10,
-            shadowColor: 'rgba(67, 233, 123, 0.6)',
-          },
-          label: {
-            show: false,
-          },
-          zlevel: 2,
-          silent: true, // 不响应鼠标事件
-        }] : []),
+        },
       ],
     };
-  };
+  }, [
+    selectedProvince,
+    isProvinceView,
+    layoutData,
+    mapCenter,
+    provincesWithBands,
+    colors,
+    isDark,
+    avatarBorderColor,
+    connectionLines,
+    avatarSize,
+  ]);
 
   useEffect(() => {
     const loadMap = async () => {
       try {
-        const response = await fetch('/china.json', {
-          cache: 'no-cache',
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
+        const response = await fetch('/china.json', { cache: 'force-cache' });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const geoJson = await response.json();
         echarts.registerMap('china', geoJson);
         setMapLoaded(true);
-
-        const chartInstance = chartRef.current?.getEchartsInstance();
-        if (chartInstance) {
-          chartInstance.setOption(getOption());
-        }
       } catch (error) {
-        console.error('Failed to load China map:', error);
+        console.error('Failed to load map:', error);
       }
     };
-
     loadMap();
   }, []);
 
-  // 当乐队数据或选中省份变化时更新
+  const onChartClick = useCallback(
+    (params: unknown) => {
+      const p = params as {
+        componentSubType?: string;
+        seriesName?: string;
+        data?: { band?: ForceLayoutBand };
+        componentType?: string;
+        name?: string;
+      };
+
+      if (p.componentSubType === 'scatter' && p.seriesName === 'bands') {
+        const band = p.data?.band;
+        if (band) {
+          if (selectedProvince === band.province) {
+            setSelectedBand(band);
+          } else {
+            selectProvince(band.province);
+          }
+        }
+      } else if (p.componentType === 'geo') {
+        const provinceName = p.name;
+        if (provinceName === selectedProvince) {
+          selectProvince(null);
+        } else if (provinceName && provincesWithBands.includes(provinceName)) {
+          selectProvince(provinceName);
+        }
+      }
+    },
+    [selectProvince, selectedProvince, setSelectedBand, provincesWithBands]
+  );
+
+  const chartEvents = useMemo(
+    () => ({
+      click: onChartClick,
+      georoam: () => {
+        // 保存 zoom 状态并触发布局重算
+        if (chartRef.current) {
+          const instance = chartRef.current.getEchartsInstance();
+          const option = instance.getOption() as { geo?: Array<{ zoom?: number }> };
+          const newZoom = option?.geo?.[0]?.zoom;
+          if (typeof newZoom === 'number') {
+            zoomRef.current = newZoom;
+
+            // 防抖：zoom 变化时延迟重算布局
+            if (layoutTimeoutRef.current) {
+              clearTimeout(layoutTimeoutRef.current);
+            }
+            layoutTimeoutRef.current = setTimeout(() => {
+              recalculateLayout();
+            }, 150);
+          }
+        }
+        window.dispatchEvent(new CustomEvent('mapZoomChanged'));
+      },
+    }),
+    [onChartClick, recalculateLayout]
+  );
+
+  // 暴露缩放方法给外部组件
   useEffect(() => {
     if (!mapLoaded) return;
 
-    const chartInstance = chartRef.current?.getEchartsInstance();
-    if (chartInstance) {
-      chartInstance.setOption(getOption());
-    }
-  }, [bands, selectedProvince, mapLoaded]);
+    const w = window as {
+      __mapZoom?: (delta: number) => void;
+      __mapSetZoom?: (zoom: number) => void;
+      __mapGetZoom?: () => number;
+      __mapReset?: () => void;
+    };
 
-  const onChartClick = (params: any) => {
-    if (params.componentSubType === 'scatter' && params.seriesName === '乐队') {
-      const band = params.data.band;
-      if (band) {
-        selectProvince(band.province);
+    w.__mapZoom = (delta: number) => {
+      const instance = chartRef.current?.getEchartsInstance();
+      if (!instance) return;
+      try {
+        const option = instance.getOption() as { geo?: Array<{ zoom?: number }> };
+        const currentZoom = option?.geo?.[0]?.zoom || 1.2;
+        const newZoom = Math.max(0.8, Math.min(12, currentZoom + delta));
+        instance.setOption({ geo: { zoom: newZoom } });
+        zoomRef.current = newZoom;
+
+        // 触发布局重算
+        if (layoutTimeoutRef.current) {
+          clearTimeout(layoutTimeoutRef.current);
+        }
+        layoutTimeoutRef.current = setTimeout(recalculateLayout, 150);
+
+        window.dispatchEvent(new CustomEvent('mapZoomChanged'));
+      } catch (e) {
+        console.warn('Map zoom error:', e);
       }
-    } else if (params.componentType === 'geo') {
-      const provinceName = params.name;
-      if (provinceName !== selectedProvince) {
-        selectProvince(provinceName);
-      } else {
+    };
+
+    w.__mapSetZoom = (newZoom: number) => {
+      const instance = chartRef.current?.getEchartsInstance();
+      if (!instance) return;
+      try {
+        const clampedZoom = Math.max(0.8, Math.min(12, newZoom));
+        instance.setOption({ geo: { zoom: clampedZoom } });
+        zoomRef.current = clampedZoom;
+
+        if (layoutTimeoutRef.current) {
+          clearTimeout(layoutTimeoutRef.current);
+        }
+        layoutTimeoutRef.current = setTimeout(recalculateLayout, 150);
+
+        window.dispatchEvent(new CustomEvent('mapZoomChanged'));
+      } catch (e) {
+        console.warn('Map setZoom error:', e);
+      }
+    };
+
+    w.__mapGetZoom = () => {
+      const instance = chartRef.current?.getEchartsInstance();
+      if (!instance) return 1.2;
+      try {
+        const option = instance.getOption() as { geo?: Array<{ zoom?: number }> };
+        return option?.geo?.[0]?.zoom || 1.2;
+      } catch {
+        return 1.2;
+      }
+    };
+
+    w.__mapReset = () => {
+      const instance = chartRef.current?.getEchartsInstance();
+      if (!instance) return;
+      try {
+        instance.setOption({ geo: { center: undefined, zoom: 1.2 } });
+        zoomRef.current = 1.2;
         selectProvince(null);
+
+        if (layoutTimeoutRef.current) {
+          clearTimeout(layoutTimeoutRef.current);
+        }
+        layoutTimeoutRef.current = setTimeout(recalculateLayout, 150);
+
+        window.dispatchEvent(new CustomEvent('mapZoomChanged'));
+      } catch (e) {
+        console.warn('Map reset error:', e);
       }
-    }
-  };
+    };
+
+    return () => {
+      delete w.__mapZoom;
+      delete w.__mapSetZoom;
+      delete w.__mapGetZoom;
+      delete w.__mapReset;
+      if (layoutTimeoutRef.current) {
+        clearTimeout(layoutTimeoutRef.current);
+      }
+    };
+  }, [mapLoaded, selectProvince, recalculateLayout]);
 
   if (!mapLoaded) {
     return (
-      <div className="w-full h-full flex items-center justify-center">
-        <p className="text-muted-foreground">加载地图中...</p>
+      <div
+        className="w-full h-full flex items-center justify-center"
+        style={{ backgroundColor: colors.mapBg }}
+      >
+        <div className="w-5 h-5 border-2 border-foreground/20 border-t-foreground rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="w-full h-full">
+    <div
+      className="relative w-full h-full"
+      style={{ backgroundColor: colors.mapBg }}
+    >
       <ReactEChartsCore
         ref={chartRef}
         echarts={echarts}
-        option={getOption()}
+        option={chartOption}
         style={{ height: '100%', width: '100%' }}
-        onEvents={{
-          click: onChartClick,
-        }}
-        notMerge={false}
-        lazyUpdate={false}
+        onEvents={chartEvents}
+        notMerge={true}
+        lazyUpdate={true}
       />
     </div>
   );

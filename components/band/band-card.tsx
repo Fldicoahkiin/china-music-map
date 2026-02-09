@@ -1,7 +1,5 @@
 'use client';
 
-import { Card, CardContent } from '@/components/ui/card';
-import { BandAvatar } from './band-avatar';
 import { motion } from 'framer-motion';
 import type { Band } from '@/types/band';
 
@@ -13,26 +11,51 @@ interface BandCardProps {
 
 export function BandCard({ band, index = 0, onClick }: BandCardProps) {
   return (
-    <motion.div
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: index * 0.05, duration: 0.3 }}
+    <motion.button
+      initial={{ opacity: 0, y: 4 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{
+        duration: 0.2,
+        delay: Math.min(index * 0.02, 0.3),
+        ease: [0.4, 0, 0.2, 1]
+      }}
+      onClick={onClick}
+      className="w-full flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-muted/50 active:bg-muted transition-colors text-left group"
     >
-      <Card
-        className="mb-3 hover:shadow-lg transition-shadow cursor-pointer hover:border-primary"
-        onClick={onClick}
-      >
-        <CardContent className="flex items-center p-4">
-          <BandAvatar band={band} size="md" />
+      {/* 头像 */}
+      <div className="w-10 h-10 rounded-full bg-foreground flex items-center justify-center flex-shrink-0 overflow-hidden">
+        {band.avatar ? (
+          <img
+            src={band.avatar}
+            alt={band.name}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <span className="text-background text-sm font-semibold">
+            {band.name[0]}
+          </span>
+        )}
+      </div>
 
-          <div className="ml-4 flex-1">
-            <h4 className="font-semibold text-lg">{band.name}</h4>
-            <p className="text-sm text-muted-foreground">
-              {band.genre} · {band.city}
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-    </motion.div>
+      {/* 信息 */}
+      <div className="flex-1 min-w-0">
+        <h4 className="text-sm font-medium truncate group-hover:text-primary transition-colors">
+          {band.name}
+        </h4>
+        <p className="text-xs text-muted-foreground truncate mt-0.5">
+          {band.genre} · {band.city}
+        </p>
+      </div>
+
+      {/* 箭头 */}
+      <svg
+        className="w-4 h-4 text-muted-foreground/40 group-hover:text-muted-foreground group-hover:translate-x-0.5 transition-all flex-shrink-0"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5l7 7-7 7" />
+      </svg>
+    </motion.button>
   );
 }
